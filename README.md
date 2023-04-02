@@ -10,3 +10,5 @@ Use [this repository](https://github.com/kb22/CSCI_6360_Parallel_K_Means) for re
 | ----- | ------- | ------ |
 | Try to modify code to run k-medoids instead of k-means in serial code | Harshaa/Dhruva  | Incomplete |
 | Read through the reference repo  | Chen | Incomplete |
+
+Next meeting: 
