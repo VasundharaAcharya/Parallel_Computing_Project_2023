@@ -1,7 +1,7 @@
 /**
  * compile from terminal/shell as follows:
  * 
- *   bash$ gcc -Wall -Werror silhouette.c
+ *   bash$ gcc -Wall -Werror silhouette.c -lm
  * 
  */
 
