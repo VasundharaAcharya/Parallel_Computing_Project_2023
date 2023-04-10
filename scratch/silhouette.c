@@ -62,10 +62,19 @@ double average_nearest_cluster_distance(double **data, int *labels, int numdata,
 #endif
 
 // Calculate silhouette coefficient for the data point with index 'idx' in 'data'
-double silhouette_coefficient(double **data, int *labels, int numdata, int k, int dim, int idx) {
+double silhouette_coefficient_single_point(double **data, int *labels, int numdata, int k, int dim, int idx) {
     double a = average_cluster_distance(data, labels, numdata, dim, idx);
     double b = average_nearest_cluster_distance(data, labels, numdata, k, dim, idx);
     return (b - a) / MAX(a, b);
+}
+
+// Calculate average silhouette coefficient
+double silhouette_coefficient(double **data, int *labels, int numdata, int k, int dim) {
+    double totalsc = 0.0;
+    for (int i = 0; i < numdata; i ++ ) {
+        totalsc += silhouette_coefficient_single_point(data, labels, numdata, k, dim, i);
+    }
+    return totalsc / numdata;
 }
 
 int main() { return EXIT_SUCCESS; };
