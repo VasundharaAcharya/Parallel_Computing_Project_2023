@@ -1,1 +1,9 @@
 
+Title :A rice gene expression matrix derived from large-scaled RNA-seq datasets
+
+This dataset contains a gene expression matrix used to construct rice gene co-expression networks. 
+The matrix has expression values  (log2(cpm+1)) for 33,846 genes derived from 8,456 publicaly available  high-quality rice RNA-seq runs, 
+which were downloaded from the NCBI SRA  database as of June 2021. 
+
+Citation:
+Ma, Shisong (2022): A rice gene expression matrix derived from large-scaled RNA-seq datasets. figshare. Dataset. https://doi.org/10.6084/m9.figshare.20072177.v1
