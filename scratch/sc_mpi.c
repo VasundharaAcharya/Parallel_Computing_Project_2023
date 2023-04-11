@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include <math.h>
 #include <mpi.h>
+
+
+
+//this is for the timing 
+
+
+
 // #ifndef CLOCKCYCLE_H
 // #define CLOCKCYCLE_H
 
@@ -22,7 +29,7 @@
 // #endif // CLOCKCYCLE_H
 
 
-
+// Calculates Euclidean distance between two points
 double euclidean_distance(double *p1, double *p2, int dim) {
     double distance = 0.0;
     for (int i = 0; i < dim; i ++ ) {
@@ -101,23 +108,24 @@ double silhouette_coefficient(double **data, int *labels, int si, int ei, int k,
 
 int main() { 
 
-
+//the start index and the ending index for the elements that each process has to consider
     int si,ei;
-
-  MPI_Init(NULL, NULL);
+//mpi initializations, rank determinor
+    MPI_Init(NULL, NULL);
     MPI_Status status;
-     MPI_Request r_request, s_request;
+    MPI_Request r_request, s_request;
 
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
+    
+//n is the number of elements, fs is the number of features, k is the number of clusters
     int n =7129, fs = 34, k=15, *label,lab;
-
     double **data,temp;
-
+    
+//initialize the spaces for the data (stored as 2d array) and labels
     FILE *fp;
     data = (double**)malloc(n*sizeof(double*));
 
@@ -125,14 +133,14 @@ int main() {
     {
         data[i]=(double*)malloc(fs*sizeof(double));
     }
-
     label = (int*)malloc(n*sizeof(int));
 
 
     //   start_time = clock_now();
-
+// if the raank is 0, i am initializing data and broadcasting it to all the processes
     if(world_rank==0)
     {
+        //this is the initialization of data with the normalized results
         fp = fopen("output_gene_data.txt", "r");
 
         for(int i=0;i<n;i++)
@@ -145,7 +153,7 @@ int main() {
         }
 
         fclose(fp);
-
+        //this is the initialization of the labels, put the file having cluster index for each data point here
         fp = fopen("gene_med_ind.txt", "r");
 
         for(int i=0;i<n;i++)
@@ -155,17 +163,16 @@ int main() {
             label[i]=lab;
         }
         fclose(fp);
-
+        //broadcasting data and the labels. here each data element is sent as a seperate broadcast call
         for(int i=0;i<n;i++)
         {
             MPI_Bcast(data[i], fs, MPI_DOUBLE,0,MPI_COMM_WORLD);
         }
         MPI_Bcast(label,n,MPI_INT,0,MPI_COMM_WORLD);
-    // printf("sillhouette coefficient:%lf\n",silhouette_coefficient(data,label,n,k,fs));
     }
     else
     {
-
+        //recieve data here
         for(int i=0;i<n;i++)
         {
             MPI_Bcast(data[i], fs, MPI_DOUBLE,0,MPI_COMM_WORLD);
@@ -176,7 +183,7 @@ int main() {
     MPI_Barrier(MPI_COMM_WORLD);
 
 
-
+    //determining the range range of points for each process to consider
 
     si = (world_rank)*(n/world_size);
 
@@ -188,6 +195,7 @@ int main() {
     {
         ei = (world_rank+1)*(n/world_size);
     }
+    // here we find the sillhouete coefficient for each of the points assigned to the process and use reduce to sum them all
     double a;
     double result;
     a = silhouette_coefficient(data, label, si,ei,k,fs,n);
@@ -196,7 +204,8 @@ int main() {
     MPI_Reduce(&a, &result, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
 //   end_time = clock_now();
-
+    
+    //here we are finding the average of the results across the processes
     
     if(world_rank==0)
     {
@@ -204,9 +213,4 @@ int main() {
     }
     
      MPI_Finalize();
-
-
-
-
-    
 };
