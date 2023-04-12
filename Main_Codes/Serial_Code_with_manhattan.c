@@ -177,9 +177,7 @@ double silhouette_coefficient_single_point(double **data, int *labels, int numda
 // Calculate average silhouette coefficient
 double silhouette_coefficient(double **data, int *labels, int numdata, int k, int dim) {
     double totalsc = 0.0;
-    for (int i = 0; i<numdata; i ++ ) {
-        if(i%1000==0)
-        
+    for (int i = 0; i<numdata; i ++ ) {    
         totalsc += silhouette_coefficient_single_point(data, labels, numdata, k, dim, i);
     }
     return totalsc / numdata;
