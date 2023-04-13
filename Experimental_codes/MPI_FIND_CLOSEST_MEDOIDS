@@ -7,7 +7,7 @@
 #include<mpi.h>
 #include<string.h>
 #include<math.h>
-#include "/content/clockcycle.h"
+#include "clockcycle.h"
 #define Genes 7129     // X Total Number of genes to be given as an input. 
 #define Samples 34          // Represents the sample genes
 //Change the value of K to obtain the results with different clusters
