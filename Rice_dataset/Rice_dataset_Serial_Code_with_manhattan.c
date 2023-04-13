@@ -388,10 +388,20 @@ int main() {
   }
 
 
+   finish = clock_now();
+
+    unsigned long long starting = 0;
+   unsigned long long finishing = 0;
+
+
 
 
   // Start of silhoutte coefficient. We are using this as we cannot plot these huge data.
   //To validate the results of the clustering algorithm, we use this. 
+
+
+
+  starting=clock_now();. 
 
 
 
@@ -449,10 +459,16 @@ int main() {
 
 // end of sill coeff
 
+	finishing=clock_now();
+
+// end of sill coeff
+
 	// End the timer here
-  finish = clock_now();
-  printf("Total clockcycles taken to run K-Medoids and compute silhouette score on %d genes in rice dataset with %d clusters is %lld cycles.\n", Genes, K, (finish-start));
-  printf("Total time taken to run K-Medoids and compute silhouette score on %d genes in rice dataset with %d clusters is %e seconds.\n", Genes, K, (finish-start)/512000000.0f);
+
+  printf("Total clockcycles taken to run K-Medoids on %d genes with %d clusters is %lld cycles.\n", Genes, K, (finish-start));
+   printf("Total time taken to run K-Medoids on %d genes with %d clusters is %e seconds.\n", Genes, K, (finish-start)/512000000.0f);
+  printf("Total clockcycles taken to compute silhouette score on %d genes with %d clusters is %lld cycles.\n", Genes, K, (finishing-starting));
+  printf("Total time taken to compute silhouette score on %d genes with %d clusters is %e seconds.\n", Genes, K, (finishing-starting)/512000000.0f);
 
 	free (gene_data);
 	free (medoids);
