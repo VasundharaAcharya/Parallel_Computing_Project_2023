@@ -359,7 +359,13 @@ int main() {
   //To validate the results of the clustering algorithm, we use this. 
 
 
-
+   finish = clock_now();
+	
+	
+	
+   unsigned long long starting = 0;
+   unsigned long long finishing = 0;
+   starting=clock_now();
 
     data = (double**)malloc(n*sizeof(double*));
 
@@ -415,9 +421,14 @@ int main() {
 // end of sill coeff
 
 	// End the timer here
-  finish = clock_now();
-  printf("Total clockcycles taken to run K-Medoids and compute silhouette score on %d genes with %d clusters is %lld cycles.\n", Genes, K, (finish-start));
-  printf("Total time taken to run K-Medoids and compute silhouette score on %d genes with %d clusters is %e seconds.\n", Genes, K, (finish-start)/512000000.0f);
+
+	
+  finishing=clock_now();	
+  printf("Total clockcycles taken to run K-Medoids on %d genes with %d clusters is %lld cycles.\n", Genes, K, (finish-start));
+   printf("Total time taken to run K-Medoids on %d genes with %d clusters is %e seconds.\n", Genes, K, (finish-start)/512000000.0f);
+  printf("Total clockcycles taken to compute silhouette score on %d genes with %d clusters is %lld cycles.\n", Genes, K, (finishing-starting));
+  printf("Total time taken to compute silhouette score on %d genes with %d clusters is %e seconds.\n", Genes, K, (finishing-starting)/512000000.0f);
+
 
 	free (gene_data);
 	free (medoids);
