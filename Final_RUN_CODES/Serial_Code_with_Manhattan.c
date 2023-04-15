@@ -9,7 +9,7 @@
 #define Genes 7000   // X Total Number of genes to be given as an input. 
 #define Samples 10          // Represents the sample genes
 //Change the value of K to obtain the results with different clusters
-#define K 2 // Number of clusters
+#define K 10 // Number of clusters
 //Initializations
 int *cluster_idx;             
 double *gene_data;          
