@@ -1,0 +1,12 @@
+1. These files consists of parallel MPI and serial code using Manhattan
+2. I have used only 7000 genes and 10 samples for comparison
+3. The main point here is I have eliminated sampling in the serial and parallel code.
+4. The time and clockcycle comparison shows how good the MPI code is.
+5. Run it with 4 MPI ranks
+
+
+
+mpicc -g MPI_Code_Manhattan_clustering.c -lm -o k_conly_mpi22.exe
+
+
+gcc -g  Serial_Code_with_Manhattan.c -o mycode4 -lm
