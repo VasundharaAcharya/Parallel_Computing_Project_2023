@@ -6,7 +6,7 @@ CUDA IMPLEMENTATIONS UNDERWAY.
 
 
 
-Solbed
+Solved
 USAGE OF PARALLEL I/O is working fine for all cases.
 
 
