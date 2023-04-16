@@ -1,0 +1,3 @@
+Code,Genes,Samples(Genes),Time in seconds,ClockCycles
+MPI  I/O,7129,34,2.87E-02,14674228
+Serial,7129,34,1.64E-01,83827798
