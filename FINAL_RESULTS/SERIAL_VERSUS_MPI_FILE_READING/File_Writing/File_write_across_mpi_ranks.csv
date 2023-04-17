@@ -6,3 +6,4 @@ MPI Ranks,Compute Nodes,Time in seconds,Clockcycles
 32,1,1.13E-01,57627425
 64,2,5.93E-02,30355279
 128,4,8.34E-02,42700338
+256,8,6.91E-02,35359676
