@@ -205,7 +205,7 @@ int main(int argc, char *argv[]){
           int n =Genes, fs = Samples, k1=K, *label,lab;
           MPI_Request request1, request2, request3, request4; 
           double num1;
-          MPI_File fh,fh1;
+          //MPI_File fh,fh1;
           FILE *fp;
           int si,ei;
 
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]){
 
 
 
-
+/*
 
 /* MPI I/O to read from the bin file created*/
           int resultant;
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]){
           if (resultant != MPI_SUCCESS) {
               printf("Error opening file. \n");
               exit(-1);
-          }
+          }*/
 
 
 
