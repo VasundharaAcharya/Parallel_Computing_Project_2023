@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern "C" {
+    void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
+    void findclosestmedoids(double *data, double *medoids, int *idx, int rank, int size,int process_job, int si,int ei);
+}
+
 #define K 10
 #define n 7129
 #define nf 34
@@ -128,7 +133,7 @@ __global__ void findclosestmedoids_ker(double *data, double *medoids, int *med_l
 }
 
 
-extern "C" void computeMedoids(double* data, int* labels, double* medoids, int rank, int size) 
+void computeMedoids(double* data, int* labels, double* medoids, int rank, int size) 
 {
     int blockSize = 1024;
     int nblocks = (n+blockSize-1)/blockSize;
@@ -198,7 +203,7 @@ extern "C" void computeMedoids(double* data, int* labels, double* medoids, int r
 
 }
 
-extern "C"  void findclosestmedoids(double *data, double *medoids, int *idx, int rank, int size,int process_job, int si,int ei)
+void findclosestmedoids(double *data, double *medoids, int *idx, int rank, int size,int process_job, int si,int ei)
 {
     int blockSize = 1024;
     int size1 = (ei-si) + 1;
