@@ -58,48 +58,50 @@ __global__ void find_min(double *m_arr, int *mind, double *mval)
 //case 2: if 2 points have different cluster index, i am giving the value of infinity
 __global__ void find_avg_dist(double *data, int k, int *labels, double *avgs)
 {
-    int ind = blockIdx.x*blockDim.x + threadIdx.x;
-    double as=0;
+    int ind = blockIdx.x * blockDim.x + threadIdx.x;
+    double as = 0;
     int c = 0;
 
-    if (labels[ind] != k)
-    {
-        avgs[ind] = INFINITY;
-    }
-
-    else
+    if (ind < n)
     {
 
-        for (int i = 0; i < n; i++)
-        {
-            if (i != ind and labels[i] == k)
-            {
-                c += 1;
-                double ms = 0;
-
-                for (int j = 0; j < nf; j++)
-                {
-                    ms += fabs(*(data + nf * ind + j) - *(data + nf * i + j));
-                }
-                as += ms;
-            }
-            else
-            {
-                avgs[ind] = INFINITY;
-            }
-        }
-        if (c == 0)
+        if (labels[ind] != k)
         {
             avgs[ind] = INFINITY;
         }
+
         else
         {
-            avgs[ind] = as / c;
+
+            for (int i = 0; i < n; i++)
+            {
+                if (i != ind and labels[i] == k)
+                {
+                    c += 1;
+                    double ms = 0;
+
+                    for (int j = 0; j < nf; j++)
+                    {
+                        ms += fabs(*(data + nf * ind + j) - *(data + nf * i + j));
+                    }
+                    as += ms;
+                }
+                else
+                {
+                    avgs[ind] = INFINITY;
+                }
+            }
+            if (c == 0)
+            {
+                avgs[ind] = INFINITY;
+            }
+            else
+            {
+                avgs[ind] = as / c;
+            }
         }
     }
 }
-
-
 
 __global__ void findclosestmedoids_ker(double *data, double *medoids, int *med_labels,int si,int ei)
 {
@@ -157,9 +159,11 @@ extern "C" void computeMedoids(double* data, int* labels, double* medoids, int r
         ei += remainder;
     }
 
-    double *avgs = (double*)malloc(n*sizeof(double));
-    int *mind = (int*)malloc(nblocks*sizeof(int));
-    double *mval =  (double*)malloc(nblocks*sizeof(double));
+    printf("n:%d nblocks:%d\n",n,nblocks);
+    double *avgs = (double*)calloc(n,sizeof(double));
+    int *mind = (int*)calloc(nblocks,sizeof(int));
+    double *mval =  (double*)calloc(nblocks,sizeof(double));
+
 
 
     for(int i=si;i<ei;i++)
@@ -182,6 +186,7 @@ extern "C" void computeMedoids(double* data, int* labels, double* medoids, int r
             }
         }
 
+        printf("done\n");
         //assigning the medoid for the particular cluster index
         for(int j=0;j<nf;j++)
             *(medoids + nf*i+j)=*(data + nf*mi+j);
@@ -189,7 +194,6 @@ extern "C" void computeMedoids(double* data, int* labels, double* medoids, int r
     }
 
 
-        printf("done\n");
 
 
 
