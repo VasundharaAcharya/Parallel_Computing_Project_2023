@@ -227,7 +227,7 @@ int main(int argc, char *argv[]){
 
 /*
 
-/* MPI I/O to read from the bin file created*/
+MPI I/O to read from the bin file created
           int resultant;
           //For this we need to have the bin file rather than txt file.
 
