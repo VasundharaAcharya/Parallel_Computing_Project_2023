@@ -2,13 +2,13 @@
 
 ## Running a parallelized version of k-medoids algorithm
 Current issues being faced:
-CUDA IMPLEMENTATIONS UNDERWAY.
+Runs for CUDA pending
 
 
 
 Solved
 USAGE OF PARALLEL I/O is working fine for all cases.
-
+CUDA IMPLEMENTATIONS ALMOST complete.
 
 
 
