@@ -1,5 +1,0 @@
-Code,Distance_Metric,Clusters,Time in seconds,ClockCycles
-MPI Code with Manhattan metric,Manhattan,10,3.67E+01,18775150515
-Serial Serial Code with Manhattan metric,Manhattan,10,8.39E+02,4.29346E+11
-MPI Code with Euclidean metric,Euclidean,10,3.68E+01,18861024925
-Serial Code with Euclidean metric,Euclidean,10,1.54E+03,7.87361E+11
