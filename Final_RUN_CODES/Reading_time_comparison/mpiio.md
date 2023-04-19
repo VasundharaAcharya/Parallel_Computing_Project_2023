@@ -10,6 +10,6 @@ Input File: input_rice.bin
 | 8           | 5.823986e-03 | 2981881      |
 | 16          | seg fault |       |
 | 32          | seg fault |       |
-| 64          |  |       |
+| 64          | seg fault |       |
 | 128         |  |       |
 | 256         |  |       |
