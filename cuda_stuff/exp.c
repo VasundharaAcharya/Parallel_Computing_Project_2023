@@ -1,3 +1,10 @@
+
+/* This code uses KMedoids implemented with Manhattan distance metric to compute the cluster assignments.
+As per the requirement of the project, the training file is converted to bin format and is read and written using MPI I/O.
+*/
+
+
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
@@ -7,7 +14,7 @@
 #include<string.h>
 #include<math.h>
 #include "clockcycle.h"
-#define Genes 7129   // X Total Number of genes to be given as an input. 
+#define Genes 7129  // X Total Number of genes to be given as an input. 
 #define Samples 34     // Represents the sample genes
 //Change the value of K to obtain the results with different clusters
 #define K 10 // Number of clusters
@@ -15,8 +22,6 @@
 int *cluster_idx;             
 double *gene_data;          
 double *medoids;   					 // pointer to data  which stores the index of the centroid nearest to each pixel
-
-
 
 
 //Define a macro to compute the minimum
@@ -41,135 +46,113 @@ double *medoids;   					 // pointer to data  which stores the index of the centr
 /* INFINITY is supported */
 #endif
 
-void findclosestmedoids(double *data, double *medoids, int *idx, int rank, int size,int process_job, int si,int ei);
-void computeMedoids(double* data, int* labels, double* medoids, int rank, int size) ;
-// //Finding the closeset medoids
-// //This function works totally fine
-// void findclosestmedoids(double *num, double *medoids, int *idx, int rank, int size,int process_job, int si,int ei) {
-//     int i, j, l, for_i;
-//     double sum, dist[K], min_dist, local_min_dist;
+// void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
+// void findclosestmedoids(double *data, double *medoids, int *idx, int rank, int size,int process_job, int si,int ei);
+// void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
+// void findclosestmedoids(double *data, double *medoids, int * , int rank, int process_job,int size, int si,int ei);
+//Finding the closeset medoids
+//This function works totally fine
+void findclosestmedoids(double *num, double *medoids, int *idx, int rank, int process_job,int size,int si,int ei) {
+    int i, j, l, for_i;
+    double sum, dist[K], min_dist, local_min_dist;
+    // Broadcast the medoids to all processes
+    MPI_Bcast(medoids, K * Samples, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+    // Find the closest medoid for each local data point
+    for (for_i = 0; for_i <process_job; for_i++) {
+        i = si + for_i;
+        local_min_dist = INFINITY;
 
+        for (j = 0; j < K; j++) {
+            sum = 0;
 
-
-//     // Broadcast the medoids to all processes
-//     MPI_Bcast(medoids, K * Samples, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-//     // Find the closest medoid for each local data point
-//     for (for_i = 0; for_i <process_job; for_i++) {
-//         i = si + for_i;
-//         local_min_dist = INFINITY;
-
-//         for (j = 0; j < K; j++) {
-//             sum = 0;
-
-//             for (l = 0; l < Samples; l++) {
+            for (l = 0; l < Samples; l++) {
              
-//                 sum += fabs(num[i * Samples + l] - medoids[j * Samples + l]);
-//             }
+                sum += fabs(num[i * Samples + l] - medoids[j * Samples + l]);
+            }
 
-//             dist[j] = sum;
+            dist[j] = sum;
 
-//             if (MIN1(dist[j],local_min_dist)) {
-//                 local_min_dist = dist[j];
-//                 idx[i] = j;
-//             }
-//         }
-//     }
-
-
-
-//     // Reduce the local min distances to find the global min distance
-//     //The reason why we use
-//     MPI_Allreduce(&local_min_dist, &min_dist, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-
-//     // Update the indices for data points with the global min distance
-//     for (i = si; i < ei; i++) {
-//         if (dist[idx[i]] == min_dist) {
-//             idx[i] = j;
-//         }
-//     }
-// }
-
-
-
-
-
-//This code is same as the serial code, but the difference is the splitting of the clusters among processes
-// void computeMedoids(double* gene_data, int* idx, double* medoids, int rank, int size) {
-//     int i, j, k, l, m;
-//     double min_distance, distance, sum, temp;
-
-//     // using entire gene data instead of sampling
-//     int sample_size = Genes; 
-   
-//     // Divide the K clusters across the processes
-//     int medoids_per_proc = K / size;
-//     int remainder = K % size;
-//     int start_idx = rank * medoids_per_proc;
-//     int end_idx = start_idx + medoids_per_proc;
-   
-//     if (rank == size - 1) {
-//         end_idx += remainder;
-//     }
-
-//     //printf("Process %d: start_idx = %d, end_idx = %d\n", rank, start_idx, end_idx);
-
-//     // Seed the random number generator with the rank
-//     srand(time(0) + rank);
-
-//     for (i = start_idx; i < end_idx; i++) {
-//         min_distance = 1e9;
-
-//         // Calculate distances for all points in the cluster
-//         for (j = 0; j < Genes; j++) {
-//             if (idx[j] == i) {
-//                 sum = 0.0;
-//                 for (k = 0; k < Genes; k++) {
-//                     if (idx[k] == i) {
-//                         distance = 0.0;
-//                         for (l = 0; l < Samples; l++) {
-//                             // manhattan distance
-//                             double diff = *(gene_data + j * Samples + l) - *(gene_data + k * Samples + l);
-//                             distance += fabs(diff);
-//                         }
-//                         sum += distance;
-//                     }
-//                 }
-// //I am using the macro i defined for this
-//                 if (MIN1(sum, min_distance)) {
-//                     min_distance = sum;
-//                     for (m = 0; m < Samples; m++) {
-//                         temp = *(gene_data + j * Samples + m);
-//                         *(medoids + i * Samples + m) = temp;
-//                     }                    
-//                 }
-//             }
-//         }
-//     }
-// }
-
-//This section is only for verifying the data reading and medoids printing
-
-  /*  // Print the final medoids array from each process takes place here
-    printf("Process %d: Medoids = \n", rank);
-    for (i = start_idx; i < end_idx; i++) {
-        printf("Medoid %d: ", i);
-        for (j = 0; j < Samples; j++) {
-            printf("%lf ", *(medoids + i * Samples + j));
+            if (MIN1(dist[j],local_min_dist)) {
+                local_min_dist = dist[j];
+                idx[i] = j;
+            }
         }
-        printf("\n");
-    }*/
-/*
-//Gene data
-    printf("Process %d: gene_data array:\n", rank);
-for (i = 0; i < Genes; i++) {
-    for (j = 0; j < Samples; j++) {
-        printf("%f ", *(gene_data + i * Samples + j));
+
+
     }
-    printf("\n");
-}*/
-// }
+
+
+
+    // Reduce the local min distances to find the global min distance
+    //The reason why we use
+    MPI_Allreduce(&local_min_dist, &min_dist, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+
+    // Update the indices for data points with the global min distance
+    for (i = si; i < ei; i++) {
+        if (dist[idx[i]] == min_dist) {
+            idx[i] = j;
+        }
+    }
+}
+
+
+
+
+
+// //This code is same as the serial code, but the difference is the splitting of the clusters among processes
+void computeMedoids(double* gene_data, int* idx, double* medoids, int rank, int size) {
+    int i, j, k, l, m;
+    double min_distance, distance, sum, temp;
+
+    // using entire gene data instead of sampling
+    int sample_size = Genes; 
+   
+    // Divide the K clusters across the processes
+    int medoids_per_proc = K / size;
+    int remainder = K % size;
+    int start_idx = rank * medoids_per_proc;
+    int end_idx = start_idx + medoids_per_proc;
+   
+    if (rank == size - 1) {
+        end_idx += remainder;
+    }
+
+    //printf("Process %d: start_idx = %d, end_idx = %d\n", rank, start_idx, end_idx);
+
+    // Seed the random number generator with the rank
+    srand(time(0) + rank);
+
+    for (i = start_idx; i < end_idx; i++) {
+        min_distance = 1e9;
+
+        // Calculate distances for all points in the cluster
+        for (j = 0; j < Genes; j++) {
+            if (idx[j] == i) {
+                sum = 0.0;
+                for (k = 0; k < Genes; k++) {
+                    if (idx[k] == i) {
+                        distance = 0.0;
+                        for (l = 0; l < Samples; l++) {
+                            // manhattan distance
+                            double diff = *(gene_data + j * Samples + l) - *(gene_data + k * Samples + l);
+                            distance += fabs(diff);
+                        }
+                        sum += distance;
+                    }
+                }
+//I am using the macro i defined for this
+                if (MIN1(sum, min_distance)) {
+                    min_distance = sum;
+                    for (m = 0; m < Samples; m++) {
+                        temp = *(gene_data + j * Samples + m);
+                        *(medoids + i * Samples + m) = temp;
+                    }                    
+                }
+            }
+        }
+    }
+}
 
 
 
@@ -177,8 +160,8 @@ for (i = 0; i < Genes; i++) {
 
 
 
-int main(int argc, char *argv[])
-{
+
+int main(int argc, char *argv[]){
 
           int myrank, numranks, result;
           int i,j,k;
@@ -273,35 +256,6 @@ for (i = 0; i < Genes; i++) {
 
 free(local_data);
 
-
-
-
-
-//The gene data is not proper
-if (world_rank == 0) {
-
-//We are verifying this to see if the I/O has worked fine or not. Uncomment this to see the gene data
-//   printf("Gene Data:\n");
-//     for (i = 0; i <Genes; i++) {
-//         printf("Gene %d: ", i + 1);
-//         for (j = 0; j < Samples; j++) {
-//             printf("%lf ", *(gene_data + i * Samples + j));
-//         }
-//         printf("\n");
-//     }
-
-
-   
-
-}
-
-
-
-
-
-
-
-
   	if (world_rank==0)
 	{	
     
@@ -326,6 +280,7 @@ if (world_rank == 0) {
     }
   
   }
+MPI_Barrier(MPI_COMM_WORLD);
 
    
  /*This is for the findclosestmedoids function. We have computed the starting and ending indexes separately 
@@ -352,12 +307,18 @@ if (world_rank == 0) {
 
 	//MPI_Bcast(medoids, K*Samples, MPI_DOUBLE, 0, MPI_COMM_WORLD);
  
-      for (i=0;i<10;i++){
+      for (i=0;i<1;i++){
+        printf("process_job:%d\n",process_job);
+
         findclosestmedoids((double *)gene_data, (double *)medoids, &cluster_idx[0],world_rank,process_job,world_size,si,ei);
         MPI_Barrier(MPI_COMM_WORLD);
+         for(int i=0;i<Genes;i++)
+        {
+            printf("%d ",cluster_idx[i]);
+        }
+        printf("\n");
         computeMedoids((double *)gene_data, &cluster_idx[0], (double *)medoids,world_rank, world_size);
         MPI_Barrier(MPI_COMM_WORLD);
-
 
 
         /*All gather must be done here. The reason for using MPI_IN_PLACE is because the send 
@@ -379,6 +340,7 @@ if (world_rank == 0) {
 
 
       }
+      
     // Print the medoids computed by the root process
     if (world_rank == 0) {
 
@@ -394,6 +356,12 @@ if (world_rank == 0) {
             }
             printf("\n");
         }
+
+
+    // printf("Cluster assignments:\n");
+    // for (i = 0; i < Genes; i++) {
+    //     printf("Data point %d assigned to cluster %d\n", i, cluster_idx[i]);
+    // }
 
 
 
