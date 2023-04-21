@@ -169,6 +169,12 @@ void cudaInit(int size, int rank, int *cluster_idx, double *gene_data, double *m
     // gene_data = (double*) calloc(n * nf + REDUNDANT_SIZE, sizeof(double));
     // medoids = (double*) calloc(K * nf + REDUNDANT_SIZE, sizeof(double));
     // cluster_idx = (int*) calloc(n + REDUNDANT_SIZE, sizeof(int));
+
+    
+    #ifdef DEBUG_CUDA
+    printf("rank %d: cudaInit(): allocate memories successfully\n", 
+        rank);
+    #endif
 }
 
 void cudaFreeMemory(int *cluster_idx, double *gene_data, double *medoids)

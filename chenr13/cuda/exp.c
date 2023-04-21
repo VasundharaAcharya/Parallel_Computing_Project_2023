@@ -202,19 +202,14 @@ int main(int argc, char *argv[]){
           if(world_rank==world_size-1) {
               process_job=process_job+Genes%world_size;
           }
-          
-int *cluster_idx;             
-double *gene_data;          
-double *medoids;        
 
-          cudaInit(world_size, world_rank, cluster_idx, gene_data, medoids);
 
-          
-    gene_data = (double*) calloc(Genes * Samples + REDUNDANT_SIZE, sizeof(double));
-    medoids = (double*) calloc(K * Samples + REDUNDANT_SIZE, sizeof(double));
-    cluster_idx = (int*) calloc(Genes + REDUNDANT_SIZE, sizeof(int));
+        cudaInit(world_size, world_rank, cluster_idx, gene_data, medoids);
+
+        // if (!world_rank) cudaInit(world_size, world_rank, cluster_idx, gene_data, medoids);
 
   
+        MPI_Barrier(MPI_COMM_WORLD);
 
 
 
@@ -274,6 +269,10 @@ fp = fopen("training.txt", "r");
         exit(-1);
     }
 
+
+    #ifdef DEBUG_MODE
+    if (!world_rank) printf("rank %d: open file successfully\n", world_rank);
+    #endif
 
 
    for (i=0;i<Genes;i++){
