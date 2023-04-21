@@ -6,7 +6,7 @@ extern "C" {
     void findclosestmedoids(double *data, double *medoids, int *idx , int rank, int process_job,int size, int si,int ei);
 }
 
-#define K 10
+#define K 6
 #define n 7129
 #define nf 34
 #define REDUNDANT_SIZE 100
@@ -194,7 +194,7 @@ void computeMedoids(double* data, int* labels, double* medoids, int rank, int si
     {
         // here for each cluster I am first computing the avg distance array and then I am finding the min index
 
-        find_avg_dist<<<nblocks,blockSize>>>(data, i, labels,avgs);
+        find_avg_dist<<<nblocks,blockSize>>>(data, i, labels, avgs);
     #ifdef DEBUG_CUDA
     printf("    rank %d: computeMedoids(): i = %d: finish find_avg_dist()\n", 
         rank, i);

@@ -17,7 +17,7 @@ As per the requirement of the project, the training file is converted to bin for
 #define Genes 7129   // X Total Number of genes to be given as an input. 
 #define Samples 34     // Represents the sample genes
 //Change the value of K to obtain the results with different clusters
-#define K 10 // Number of clusters
+#define K 6 // Number of clusters
 #define REDUNDANT_SIZE 100
 //Initializations
 int *cluster_idx;             
@@ -350,9 +350,9 @@ MPI_Barrier(MPI_COMM_WORLD);
     }
 
 
-    // #ifdef DEBUG_MODE
-    // printf("rank %d: si = %d,  ei = %d,  start computing\n", world_rank, si, ei);
-    // #endif
+    #ifdef DEBUG_MODE
+    printf("rank %d: si = %d,  ei = %d,  start computing\n", world_rank, si, ei);
+    #endif
     
  /*We run the findclosestmedoids for 10 iterations. 
  The broadcast to all the processes and also the computation of final result using MPI_Allreduce is done in
@@ -373,9 +373,9 @@ MPI_Barrier(MPI_COMM_WORLD);
         // printf("\n");
 
 
-    // #ifdef DEBUG_MODE
-    // printf("  rank %d: finish findclosestmedoids() at i = %d\n", world_rank, i);
-    // #endif
+    #ifdef DEBUG_MODE
+    printf("  rank %d: finish findclosestmedoids() at i = %d\n", world_rank, i);
+    #endif
 
         computeMedoids((double *)gene_data, &cluster_idx[0], (double *)medoids,world_rank, world_size);
         MPI_Barrier(MPI_COMM_WORLD);
