@@ -14,7 +14,7 @@ As per the requirement of the project, the training file is converted to bin for
 #include<string.h>
 #include<math.h>
 #include "clockcycle.h"
-#define Genes 7129  // X Total Number of genes to be given as an input. 
+#define Genes 7129   // X Total Number of genes to be given as an input. 
 #define Samples 34     // Represents the sample genes
 //Change the value of K to obtain the results with different clusters
 #define K 10 // Number of clusters
@@ -47,11 +47,10 @@ double *medoids;   					 // pointer to data  which stores the index of the centr
 #endif
 
 void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
-void findclosestmedoids(double *data, double *medoids, int *idx, int rank, int size,int process_job, int si,int ei);
-// void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
+void findclosestmedoids(double *num, double *medoids, int *idx, int rank, int process_job,int size,int si,int ei);
 // void findclosestmedoids(double *data, double *medoids, int * , int rank, int process_job,int size, int si,int ei);
-//Finding the closeset medoids
-//This function works totally fine
+// Finding the closeset medoids
+// This function works totally fine
 // void findclosestmedoids(double *num, double *medoids, int *idx, int rank, int process_job,int size,int si,int ei) {
 //     int i, j, l, for_i;
 //     double sum, dist[K], min_dist, local_min_dist;
@@ -117,6 +116,8 @@ void findclosestmedoids(double *data, double *medoids, int *idx, int rank, int s
 //     if (rank == size - 1) {
 //         end_idx += remainder;
 //     }
+//         printf("%d %d\n",start_idx,end_idx);
+
 
 //     //printf("Process %d: start_idx = %d, end_idx = %d\n", rank, start_idx, end_idx);
 
@@ -246,10 +247,7 @@ int main(int argc, char *argv[]){
 
 // MPI_Barrier(MPI_COMM_WORLD);
 
-
-if(world_rank==0)
-{
-    fp = fopen("input.bin", "rb");
+fp = fopen("training.txt", "r");
     if (fp == NULL) {
         printf("The requested input file does not exist. \n");
         exit(-1);
@@ -262,8 +260,8 @@ if(world_rank==0)
 
    for (i=0;i<Genes;i++){
 		for (j=0;j<Samples;j++){
-            fread(&num1,sizeof(double),1,fp);
-			// fread(fp,"%lf", &num1);
+            // fread(&num1,sizeof(double),1,fp);
+			fscanf(fp,"%lf", &num1);
 			*(gene_data+i*Samples+j)=num1;
 		}
 	}
@@ -273,8 +271,11 @@ if(world_rank==0)
 
 	fclose(fp);
 
+// if(world_rank==0)
+// {
+    
 
-}
+// }
 
 
 MPI_Barrier(MPI_COMM_WORLD);
@@ -311,9 +312,20 @@ MPI_Barrier(MPI_COMM_WORLD);
         	} 
       
     }
+     printf("initial medoids:\n");
+        for (i = 0; i < K; i++) {
+            printf("Medoid %d: ", i + 1);
+            for (j = 0; j < Samples; j++) {
+                printf("%lf ", *(medoids + i * Samples + j));
+            }
+            printf("\n");
+        }
+
   
   }
 MPI_Barrier(MPI_COMM_WORLD);
+
+
 
  /*This is for the findclosestmedoids function. We have computed the starting and ending indexes separately 
  for the computeMedoids function inside the function.*/
@@ -338,16 +350,15 @@ MPI_Barrier(MPI_COMM_WORLD);
 
 	//MPI_Bcast(medoids, K*Samples, MPI_DOUBLE, 0, MPI_COMM_WORLD);
  
-      for (i=0;i<1;i++){
-        printf("process_job:%d\n",process_job);
+      for (i=0;i<10;i++){
 
         findclosestmedoids((double *)gene_data, (double *)medoids, &cluster_idx[0],world_rank,process_job,world_size,si,ei);
         MPI_Barrier(MPI_COMM_WORLD);
-         for(int i=0;i<Genes;i++)
-        {
-            printf("%d ",cluster_idx[i]);
-        }
-        printf("\n");
+        //  for(int i=0;i<Genes;i++)
+        // {
+        //     printf("%d ",cluster_idx[i]);
+        // }
+        // printf("\n");
         computeMedoids((double *)gene_data, &cluster_idx[0], (double *)medoids,world_rank, world_size);
         MPI_Barrier(MPI_COMM_WORLD);
 
@@ -355,7 +366,16 @@ MPI_Barrier(MPI_COMM_WORLD);
         /*All gather must be done here. The reason for using MPI_IN_PLACE is because the send 
       and recieve buffer are the same */
 
-	MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, medoids, K * Samples /world_size, MPI_DOUBLE, MPI_COMM_WORLD);
+
+
+   for (int a=0; a<K;a++){
+        
+          for (int b=0;b<Samples;b++){
+            *(medoids+a*Samples+b)=*(medoids+a*Samples+b)/world_size;
+          }
+        }
+      
+	// MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, medoids, K * Samples /world_size, MPI_DOUBLE, MPI_COMM_WORLD);
 //Since I am using all gather and updating the medoids, I dont require the below updation logic.
 
 	//MPI_Barrier(MPI_COMM_WORLD);
@@ -387,6 +407,8 @@ MPI_Barrier(MPI_COMM_WORLD);
             }
             printf("\n");
         }
+
+
 
 
     // printf("Cluster assignments:\n");
@@ -449,9 +471,12 @@ MPI_Barrier(MPI_COMM_WORLD);
             free(medoids);
         }
 
+
+
         MPI_Finalize();
         
 
-      
+        printf("reached here so problem after this\n");
+
         return 0;
     }
