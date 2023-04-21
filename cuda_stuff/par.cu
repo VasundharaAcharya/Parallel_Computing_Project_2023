@@ -113,7 +113,7 @@ __global__ void find_avg_dist(double *data, int k, int *labels, double *avgs)
 __global__ void findclosestmedoids_kernel(double *data, double *medoids, int *ids,int si,int ei)
 {
     int i = si+( blockIdx.x*blockDim.x + threadIdx.x);
-    if(i<ei)
+    if(i<ei+( blockIdx.x*blockDim.x + threadIdx.x))
     {
         double md=INFINITY;
 
@@ -133,7 +133,7 @@ __global__ void findclosestmedoids_kernel(double *data, double *medoids, int *id
 }
 
 
-extern "C" void computeMedoids1(double* data, int* labels, double* medoids, int rank, int size) 
+extern "C" void computeMedoids(double* data, int* labels, double* medoids, int rank, int size) 
 {
     //here i am initializing the 
     int blockSize = 1024;
@@ -196,22 +196,22 @@ extern "C" void computeMedoids1(double* data, int* labels, double* medoids, int 
                 mi=mind[j];
             }
         }
-        printf("index of medoid:%d cluster index:%d\n",mi,i);
+        // printf("index of medoid:%d cluster index:%d\n",mi,i);
 
-        printf("mval:\n");
-        for(int h=0;h<nblocks;h++)
-        {
-            printf("%lf ",mval[h]);
-        }
-        printf("\n");
+        // printf("mval:\n");
+        // for(int h=0;h<nblocks;h++)
+        // {
+        //     printf("%lf ",mval[h]);
+        // }
+        // printf("\n");
 
 
-        printf("mind:\n");
-        for(int h=0;h<nblocks;h++)
-        {
-            printf("%d ",mind[h]);
-        }
-        printf("\n");
+        // printf("mind:\n");
+        // for(int h=0;h<nblocks;h++)
+        // {
+        //     printf("%d ",mind[h]);
+        // }
+        // printf("\n");
 
         //assigning the medoid for the particular cluster index
         if(mi!=-1)
@@ -235,10 +235,10 @@ extern "C" void computeMedoids1(double* data, int* labels, double* medoids, int 
 
 }
 
-extern "C" void findclosestmedoids1(double *data, double *medoids, int *idx , int rank, int process_job,int size, int si,int ei)
+extern "C" void findclosestmedoids(double *data, double *medoids, int *idx , int rank, int process_job,int size, int si,int ei)
 {
     int blockSize = 1024;
-    printf("%d %d\n",si,ei);
+    // printf("%d %d\n",si,ei);
     int size1 = (ei-si) + 1;
     int nblocks = (process_job+blockSize-1)/blockSize;
     int cE,cudaDeviceCount;
@@ -261,7 +261,7 @@ extern "C" void findclosestmedoids1(double *data, double *medoids, int *idx , in
     cudaDeviceSynchronize();
 
 
-    printf("done\n");
+    // printf("done\n");
 
 
 
@@ -270,5 +270,3 @@ extern "C" void findclosestmedoids1(double *data, double *medoids, int *idx , in
 
 
 }
-
-
