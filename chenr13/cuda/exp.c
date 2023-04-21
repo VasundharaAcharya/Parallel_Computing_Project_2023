@@ -47,8 +47,10 @@ double *medoids;                     // pointer to data  which stores the index 
 /* INFINITY is supported */
 #endif
 
-void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
-void findclosestmedoids(double *num, double *medoids, int *idx, int rank, int process_job,int size,int si,int ei);
+extern void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
+extern void findclosestmedoids(double *num, double *medoids, int *idx, int rank, int process_job,int size,int si,int ei);
+extern void cudaInit(int size, int rank, int *cluster_idx, double *gene_data, double *medoids);
+extern void cudaFreeMemory(int *cluster_idx, double *gene_data, double *medoids);
 // void findclosestmedoids(double *data, double *medoids, int * , int rank, int process_job,int size, int si,int ei);
 // Finding the closeset medoids
 // This function works totally fine
@@ -191,7 +193,7 @@ int main(int argc, char *argv[]){
           int n =Genes, fs = Samples, k1=K, *label,lab;
           MPI_Request request1, request2, request3, request4; 
           double num1;
-          MPI_File fh,fh1;
+        //   MPI_File fh,fh1;
           int si,ei;
 
 
@@ -200,10 +202,17 @@ int main(int argc, char *argv[]){
           if(world_rank==world_size-1) {
               process_job=process_job+Genes%world_size;
           }
+          
+int *cluster_idx;             
+double *gene_data;          
+double *medoids;        
 
-          gene_data = (double*) calloc(Genes * Samples + REDUNDANT_SIZE, sizeof(double));
-          medoids = (double*) calloc(K * Samples + REDUNDANT_SIZE, sizeof(double));
-          cluster_idx = (int*) calloc(Genes + REDUNDANT_SIZE, sizeof(int));
+          cudaInit(world_size, world_rank, cluster_idx, gene_data, medoids);
+
+          
+    gene_data = (double*) calloc(Genes * Samples + REDUNDANT_SIZE, sizeof(double));
+    medoids = (double*) calloc(K * Samples + REDUNDANT_SIZE, sizeof(double));
+    cluster_idx = (int*) calloc(Genes + REDUNDANT_SIZE, sizeof(int));
 
   
 
@@ -488,9 +497,10 @@ MPI_Barrier(MPI_COMM_WORLD);
 
         // Free allocated memory
         if (world_rank == 0) {
-            free(gene_data);
-            free(cluster_idx);
-            free(medoids);
+            // free(gene_data);
+            // free(cluster_idx);
+            // free(medoids);
+            cudaFreeMemory(cluster_idx, gene_data, medoids);
         }
 
 

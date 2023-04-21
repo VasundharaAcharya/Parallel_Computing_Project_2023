@@ -4,6 +4,8 @@
 extern "C" {
     void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
     void findclosestmedoids(double *data, double *medoids, int *idx , int rank, int process_job,int size, int si,int ei);
+    void cudaInit(int size, int rank, int *cluster_idx, double *gene_data, double *medoids);
+    void cudaFreeMemory(int *cluster_idx, double *gene_data, double *medoids);
 }
 
 #define K 6
@@ -138,16 +140,10 @@ __global__ void findclosestmedoids_kernel(double *data, double *medoids, int *id
     }
 }
 
-
-void computeMedoids(double* data, int* labels, double* medoids, int rank, int size) 
+void cudaInit(int size, int rank, int *cluster_idx, double *gene_data, double *medoids)
 {
-    //here i am initializing the 
-    int blockSize = 1024;
-    int nblocks = (n+blockSize-1)/blockSize;
     int cudaDeviceCount;
     cudaError_t cE;
-
-
     if( (cE = cudaGetDeviceCount( &cudaDeviceCount)) != cudaSuccess )
     {
     printf(" Unable to determine cuda device count, error is %d, count is %d\n",
@@ -160,23 +156,53 @@ void computeMedoids(double* data, int* labels, double* medoids, int rank, int si
     rank, (rank % cudaDeviceCount), cE);
     exit(-1);
     }
+    
+    #ifdef DEBUG_CUDA
+    printf("rank %d: cudaInit(): cudaDeviceCount = %d\n", 
+        rank, cudaDeviceCount);
+    #endif
+
+    
+    cudaMallocManaged(&gene_data, n * nf * sizeof(double) + REDUNDANT_SIZE*sizeof(double));
+    cudaMallocManaged(&medoids, K * nf * sizeof(double) + REDUNDANT_SIZE*sizeof(double));
+    cudaMallocManaged(&cluster_idx, n * sizeof(int) + REDUNDANT_SIZE*sizeof(int));
+    // gene_data = (double*) calloc(n * nf + REDUNDANT_SIZE, sizeof(double));
+    // medoids = (double*) calloc(K * nf + REDUNDANT_SIZE, sizeof(double));
+    // cluster_idx = (int*) calloc(n + REDUNDANT_SIZE, sizeof(int));
+}
+
+void cudaFreeMemory(int *cluster_idx, double *gene_data, double *medoids)
+{
+    cudaFree(cluster_idx);
+    cudaFree(gene_data);
+    cudaFree(medoids);
+}
+
+
+void computeMedoids(double* data, int* labels, double* medoids, int rank, int size) 
+{
+    int blockSize = 1024;
+    int nblocks = (n+blockSize-1)/blockSize;
 
     // Divide the K clusters across the processes
     int medoids_per_proc = (K + size - 1) / size; // 2 = 15 / 6
     int remainder = K % size; // 4 = 10 % 6
-    int si = rank * medoids_per_proc;
-    int ei = si + medoids_per_proc;
-    if (rank >= remainder) 
-    {
-        int diff = rank - remainder;
-        si -= diff;
-        ei = si + K / size;
-    }
+    // int si = rank * medoids_per_proc;
+    // int ei = si + medoids_per_proc;
+    // if (rank >= remainder) 
+    // {
+    //     int diff = rank - remainder;
+    //     si -= diff;
+    //     ei = si + K / size;
+    // }
    
+   // need to figure out the best logic later
+    int si = K / size * rank;
+    int ei = si + K / size;
 
     #ifdef DEBUG_CUDA
-    printf("  rank %d: computeMedoids(): cudaDeviceCount = %d,  medoids_per_proc = %d,  si = %d,  ei = %d\n", 
-        rank, cudaDeviceCount, medoids_per_proc, si, ei);
+    printf("  rank %d: computeMedoids(): medoids_per_proc = %d,  si = %d,  ei = %d\n", 
+        rank, medoids_per_proc, si, ei);
     #endif
 
     double *avgs, *mval;
