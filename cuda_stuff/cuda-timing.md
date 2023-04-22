@@ -2,6 +2,7 @@
 
 File: exp.c, par.cu
 Input File: training.txt
+Platform: 
 
 | block size | runtime(s)   | clockcycles  |
 | :--------: | -----------: | -----------: |
