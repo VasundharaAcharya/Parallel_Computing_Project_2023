@@ -14,26 +14,31 @@ You can vary the K value to obtain results of different cluster values.*/
 
 #define Genes 7129     // X Total Number of genes to be given as an input. 
 #define Samples 34          // Represents the sample genes
-//Change the value of K to obtain the results with different clusters
+// Change the value of K to obtain the results with different clusters
 #define K 8 // Number of clusters
-#define Iteration 1000
 
-//Initializations
+const int blockSize = 32;
+const int Iteration = 1000;
+
 int *cluster_idx;             
 double *gene_data;          
 double *medoids;      
 
-//Macro
 #ifndef MIN
 #define MIN(x, y) ((x < y) ? x : y)
 #endif
 
-//Macro to compute the maximum
 #ifndef MAX
 #define MAX(x, y) ((x < y) ? y : x)
 #endif
 
 
+void init();
+void readdata();
+void initmedoids();
+void finalize();
+
+// clustering algorithm
 double manhattan_distance(double *p1, double *p2, int dim);
 double euclidean_distance(double *p1, double *p2, int dim);
 void findclosestmedoids(double *gene_data, double *medoids, int* idx);
@@ -44,67 +49,23 @@ double silhouette_coefficient_single_point(double **data, int *labels, int numda
 double silhouette_coefficient(double **data, int *labels, int numdata, int k, int dim);
 
 
-
-//Main function starts here
 int main() {
     // Define variables to keep track of time
     unsigned long long start = 0;
     unsigned long long finish = 0;
 
-    //All the initializations
-    FILE *fp, *fw;
-    double num1;
-    int i, j, k, rnd_num;
-
-    int n = Genes, fs = Samples, k1 = K, *label, lab;
-
+    int i, j;
+    int *label, lab;
     double **data, temp;
 
-    gene_data = calloc(Genes * Samples, sizeof(double));
-    medoids = calloc(K * Samples, sizeof(double));
-    cluster_idx = calloc(Genes, sizeof(int));
+    init();
 
-    srand(time(0));
-
-    // File open for reading
-    fp = fopen("training.txt", "r");
-    if (fp == NULL) {
-        printf("The requested input file does not exist. \n");
-        exit(-1);
-    }
-
-    for (i = 0; i < Genes; i ++ ){
-    	for (j = 0; j < Samples; j ++ ){
-    		fscanf(fp, "%lf", &num1);
-    		*(gene_data + i * Samples + j) = num1;
-    	}
-    }
-
-	fclose(fp);
+    readdata();
 
     //Start the clockcycle
+    start = clock_now();
 
-	start = clock_now();
-
-	//Creation of random number and start with random medoids
-	for (i = 0; i < K; i++) {
-
-		rnd_num = (rand() % n);
-	
-		for (j = 0; j < Samples; j ++ ){ 
-    		*(medoids+i*Samples+j) = *(gene_data+rnd_num*Samples+j); 
-    	}
-    }
-
-    //Print initial medoids
-    for (i = 0; i < K; i++) {
-        printf("Initial Medoid %d: ", i+1);
-        for (j = 0; j < Samples; j++) {
-            printf("%f ", *(medoids+i*Samples+j));
-        }
-        printf("\n");
-    }
-
+    initmedoids();
 
     for (i = 0; i < Iteration; i ++ ) {
         findclosestmedoids((double*)gene_data, (double *)medoids, &cluster_idx[0]);
@@ -121,7 +82,7 @@ int main() {
 
     printf("kmedoids completed with clustering of the gene samples \n");
 
-
+    FILE *fp, *fw;
     // Write clustered gene data to file
     int flag1 = 0;
     char filename3[100];
@@ -170,25 +131,25 @@ int main() {
     unsigned long long finishing = 0;
 
     // Start of silhoutte coefficient. We are using this as we cannot plot these huge data.
-    //To validate the results of the clustering algorithm, we use this. 
+    // To validate the results of the clustering algorithm, we use this. 
 
     starting = clock_now();
-    data = (double**)malloc(n * sizeof(double*));
+    data = (double**)calloc(Genes, sizeof(double*));
 
-    for (int i = 0; i < n; i ++ ) {
-        data[i] = (double*)malloc(fs*sizeof(double));
+    for (int i = 0; i < Genes; i ++ ) {
+        data[i] = (double*)calloc(Samples, sizeof(double));
     }
 
-    label = (int*)malloc(n * sizeof(int));
+    label = (int*)calloc(Genes, sizeof(int));
 
     fp = fopen(filename3, "r");
     if (fp == NULL) {
-        printf("Error, the requested file does not exist");   
+        printf("Error, the requested file does not exist\n");   
         exit(1);             
     }
-    for (int i = 0; i < n; i ++ )
+    for (int i = 0; i < Genes; i ++ )
     {
-        for(int j = 0; j < fs; j ++ )
+        for(int j = 0; j < Samples; j ++ )
         {
             fscanf(fp, "%lf", &temp);
             data[i][j] = temp;
@@ -202,27 +163,81 @@ int main() {
         printf("Error, the requested file does not exist");   
         exit(1);             
     }
-    for(int i = 0; i < n; i ++ ) {
+    for(int i = 0; i < Genes; i ++ ) {
         fscanf(fp,"%d", &lab);
         label[i] = lab;
     }
     fclose(fp);
 
-    printf("sillhouette coefficient:%lf\n", silhouette_coefficient(data,label,n,k1,fs));
-
     // end of sill coeff
-	// End the timer here
+    printf("sillhouette coefficient:%lf\n", silhouette_coefficient(data, label, Genes, K, Samples));
 
+    // End the timer here
     finishing = clock_now();
     printf("Total clockcycles taken to run K-Medoids on %d genes with %d clusters is %lld cycles.\n", Genes, K, (finish - start));
     printf("Total time taken to run K-Medoids on %d genes with %d clusters is %e seconds.\n", Genes, K, (finish - start) / 512000000.0f);
     printf("Total clockcycles taken to compute silhouette score on %d genes with %d clusters is %lld cycles.\n", Genes, K, (finishing - starting));
     printf("Total time taken to compute silhouette score on %d genes with %d clusters is %e seconds.\n", Genes, K, (finishing - starting) / 512000000.0f);
 
-	free(gene_data);
-	free(medoids);
-	free(cluster_idx);
+    finalize();
+
+    return EXIT_SUCCESS;
 }
+
+
+void init() { // initialization
+    srand(time(0));
+
+    gene_data = calloc(Genes * Samples, sizeof(double));
+    medoids = calloc(K * Samples, sizeof(double));
+    cluster_idx = calloc(Genes, sizeof(int));
+}
+
+
+void readdata() { // read data from "training.txt" in serial
+    FILE *fp;
+    double num1;
+    fp = fopen("training.txt", "r");
+    if (fp == NULL) {
+        printf("The requested input file does not exist. \n");
+        exit(1);
+    }
+    for (int i = 0; i < Genes; i ++ ){
+        for (int j = 0; j < Samples; j ++ ){
+            fscanf(fp, "%lf", &num1);
+            *(gene_data + i * Samples + j) = num1;
+        }
+    }
+    fclose(fp);
+}
+
+
+void initmedoids() {
+    //Creation of random number and start with random medoids
+    int rnd_num;
+    for (int i = 0; i < K; i ++ ) {
+        rnd_num = rand() % Genes;
+        for (int j = 0; j < Samples; j ++ ){ 
+            *(medoids + i * Samples + j) = *(gene_data + rnd_num * Samples + j); 
+        }
+    }
+    // Print initial medoids
+    // for (i = 0; i < K; i++) {
+    //     printf("Initial Medoid %d: ", i+1);
+    //     for (j = 0; j < Samples; j++) {
+    //         printf("%f ", *(medoids + i * Samples + j));
+    //     }
+    //     printf("\n");
+    // }
+}
+
+
+void finalize() {
+    free(gene_data);
+    free(medoids);
+    free(cluster_idx);
+}
+
 
 
 // Specification of the distance metrics for the task of gene clustering.
@@ -342,7 +357,7 @@ double average_nearest_cluster_distance(double **data, int *labels, int numdata,
         cluster_distance[labels[i]] +=euclidean_distance(data[idx], data[i], dim);
         count[labels[i]] ++ ;
     }
-    double res = INFINITY;
+    double res = INF;
     for (int i = 0; i < k; i ++ ) {
         if (i == labels[idx]) continue;
         res = MIN(res, cluster_distance[i] / count[i]);
