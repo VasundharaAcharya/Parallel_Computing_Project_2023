@@ -1,4 +1,3 @@
-
 /* This code uses KMedoids implemented with Manhattan distance metric to compute the cluster assignments.
 As per the requirement of the project, the training file is converted to bin format and is read and written using MPI I/O.
 */
@@ -17,11 +16,12 @@ As per the requirement of the project, the training file is converted to bin for
 #define Genes 7129   // X Total Number of genes to be given as an input. 
 #define Samples 34     // Represents the sample genes
 //Change the value of K to obtain the results with different clusters
-#define K 10 // Number of clusters
+#define K 6 // Number of clusters
+#define REDUNDANT_SIZE 0
 //Initializations
-int *cluster_idx;             
-double *gene_data;          
-double *medoids;   					 // pointer to data  which stores the index of the centroid nearest to each pixel
+extern int *cluster_idx;             
+extern double *gene_data;          
+extern double *medoids;                     // pointer to data  which stores the index of the centroid nearest to each pixel
 
 
 //Define a macro to compute the minimum
@@ -46,8 +46,10 @@ double *medoids;   					 // pointer to data  which stores the index of the centr
 /* INFINITY is supported */
 #endif
 
-void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
-void findclosestmedoids(double *num, double *medoids, int *idx, int rank, int process_job,int size,int si,int ei);
+extern void computeMedoids(double* data, int* labels, double* medoids, int rank, int size);
+extern void findclosestmedoids(double *num, double *medoids, int *idx, int rank, int process_job,int size,int si,int ei);
+extern void cudaInit(int size, int rank);
+extern void cudaFreeMemory(int *cluster_idx, double *gene_data, double *medoids);
 // void findclosestmedoids(double *data, double *medoids, int * , int rank, int process_job,int size, int si,int ei);
 // Finding the closeset medoids
 // This function works totally fine
@@ -164,6 +166,7 @@ void findclosestmedoids(double *num, double *medoids, int *idx, int rank, int pr
 
 int main(int argc, char *argv[]){
 
+
           int myrank, numranks, result;
           int i,j,k;
           int process_job, each_chunk_pos;
@@ -180,11 +183,16 @@ int main(int argc, char *argv[]){
           int world_rank;
           MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
+          
+    #ifdef DEBUG_MODE
+    if (!world_rank) printf("version 1.2  # ranks: %d\n", world_size);
+    #endif
+
           int rnd_num;
           int n =Genes, fs = Samples, k1=K, *label,lab;
           MPI_Request request1, request2, request3, request4; 
           double num1;
-          MPI_File fh,fh1;
+        //   MPI_File fh,fh1;
           int si,ei;
 
 
@@ -194,11 +202,13 @@ int main(int argc, char *argv[]){
               process_job=process_job+Genes%world_size;
           }
 
-          gene_data = (double*) calloc(Genes * Samples, sizeof(double));
-          medoids = (double*) calloc(K * Samples, sizeof(double));
-          cluster_idx = (int*) calloc(Genes, sizeof(int));
+
+        cudaInit(world_size, world_rank);
+
+        // if (!world_rank) cudaInit(world_size, world_rank, cluster_idx, gene_data, medoids);
 
   
+        MPI_Barrier(MPI_COMM_WORLD);
 
 
 
@@ -247,6 +257,11 @@ int main(int argc, char *argv[]){
 
 // MPI_Barrier(MPI_COMM_WORLD);
 
+
+    #ifdef DEBUG_MODE
+    if (!world_rank) printf("rank %d: start reading input file\n", world_rank);
+    #endif
+
 fp = fopen("training.txt", "r");
     if (fp == NULL) {
         printf("The requested input file does not exist. \n");
@@ -254,29 +269,27 @@ fp = fopen("training.txt", "r");
     }
 
 
-
-
+    #ifdef DEBUG_MODE
+    if (!world_rank) printf("rank %d: open file successfully\n", world_rank);
+    #endif
 
 
    for (i=0;i<Genes;i++){
-		for (j=0;j<Samples;j++){
+        for (j=0;j<Samples;j++){
             // fread(&num1,sizeof(double),1,fp);
-			fscanf(fp,"%lf", &num1);
-			*(gene_data+i*Samples+j)=num1;
-		}
-	}
+            fscanf(fp,"%lf", &num1);
+            *(gene_data+i*Samples+j)=num1;
+        }
+    }
 
 
 
-
-	fclose(fp);
-
-// if(world_rank==0)
-// {
+    fclose(fp);
     
 
-// }
-
+    #ifdef DEBUG_MODE
+    if (!world_rank) printf("rank %d: finish reading input file\n", world_rank);
+    #endif
 
 MPI_Barrier(MPI_COMM_WORLD);
 
@@ -290,40 +303,42 @@ MPI_Barrier(MPI_COMM_WORLD);
 
 // free(local_data);
 
-  	if (world_rank==0)
-	{	
+    if (world_rank==0)
+    {   
     
            
               int lower =0;
               int upper =process_job-1;
               srand(time(0));
 
+
   
   // Start the timer here
     starttime = clock_now();
 //Random initialize of medoids takes place here
-		for (int i = 0; i < K; i++) {
+        for (int i = 0; i < K; i++) {
 
-			int rnd_num = (rand()%(upper-lower + 1)) + lower;
-	
-		
-			for (j=0;j<Samples;j++){ 
-        		*(medoids+i*Samples+j) = *(gene_data+rnd_num*Samples+j); 
-        	} 
+            int rnd_num = (rand()%(upper-lower + 1)) + lower;
+    
+        
+            for (j=0;j<Samples;j++){ 
+                *(medoids+i*Samples+j) = *(gene_data+rnd_num*Samples+j); 
+            } 
       
     }
-     printf("initial medoids:\n");
-        for (i = 0; i < K; i++) {
-            printf("Medoid %d: ", i + 1);
-            for (j = 0; j < Samples; j++) {
-                printf("%lf ", *(medoids + i * Samples + j));
-            }
-            printf("\n");
-        }
+    //  printf("initial medoids:\n");
+    //     for (i = 0; i < K; i++) {
+    //         printf("Medoid %d: ", i + 1);
+    //         for (j = 0; j < Samples; j++) {
+    //             printf("%lf ", *(medoids + i * Samples + j));
+    //         }
+    //         printf("\n");
+    //     }
 
   
   }
 MPI_Barrier(MPI_COMM_WORLD);
+
 
 
 
@@ -341,6 +356,10 @@ MPI_Barrier(MPI_COMM_WORLD);
         ei = (world_rank+1)*(Genes/world_size);
     }
 
+
+    #ifdef DEBUG_MODE
+    printf("rank %d: si = %d,  ei = %d,  start computing\n", world_rank, si, ei);
+    #endif
     
  /*We run the findclosestmedoids for 10 iterations. 
  The broadcast to all the processes and also the computation of final result using MPI_Allreduce is done in
@@ -348,7 +367,7 @@ MPI_Barrier(MPI_COMM_WORLD);
  the computeMed function */
 
 
-	//MPI_Bcast(medoids, K*Samples, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    //MPI_Bcast(medoids, K*Samples, MPI_DOUBLE, 0, MPI_COMM_WORLD);
  
       for (i=0;i<10;i++){
 
@@ -359,9 +378,19 @@ MPI_Barrier(MPI_COMM_WORLD);
         //     printf("%d ",cluster_idx[i]);
         // }
         // printf("\n");
+
+
+    #ifdef DEBUG_MODE
+    printf("  rank %d: finish findclosestmedoids() at i = %d\n", world_rank, i);
+    #endif
+
         computeMedoids((double *)gene_data, &cluster_idx[0], (double *)medoids,world_rank, world_size);
         MPI_Barrier(MPI_COMM_WORLD);
 
+
+    #ifdef DEBUG_MODE
+    printf("  rank %d: finish computeMedoids() at i = %d\n", world_rank, i);
+    #endif
 
         /*All gather must be done here. The reason for using MPI_IN_PLACE is because the send 
       and recieve buffer are the same */
@@ -375,10 +404,10 @@ MPI_Barrier(MPI_COMM_WORLD);
           }
         }
       
-	// MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, medoids, K * Samples /world_size, MPI_DOUBLE, MPI_COMM_WORLD);
+    // MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, medoids, K * Samples /world_size, MPI_DOUBLE, MPI_COMM_WORLD);
 //Since I am using all gather and updating the medoids, I dont require the below updation logic.
 
-	//MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
 
    /* for (int a=0; a<K;a++){
         
@@ -387,10 +416,13 @@ MPI_Barrier(MPI_COMM_WORLD);
           }
         }
       */
-	endtime = clock_now();
 
 
       }
+
+MPI_Barrier(MPI_COMM_WORLD);
+
+    endtime = clock_now();
       
     // Print the medoids computed by the root process
     if (world_rank == 0) {
@@ -421,62 +453,62 @@ MPI_Barrier(MPI_COMM_WORLD);
 
  /* MPI fileWRITE takes place here */
     // Write clustered gene data to file
-        MPI_File clustered_gene_file;
-        MPI_File_open(MPI_COMM_SELF, "Gene_clusters.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &clustered_gene_file);
-        for (i = 0; i < K; i++) {
-            for (j = 0; j < Samples; j++) {
-                MPI_File_write(clustered_gene_file, &gene_data[i*Samples+j], 1, MPI_DOUBLE, MPI_STATUS_IGNORE);
-            }
+
+
+    //     MPI_File clustered_gene_file;
+    //     MPI_File_open(MPI_COMM_SELF, "Gene_clusters.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &clustered_gene_file);
+    //     for (i = 0; i < K; i++) {
+    //         for (j = 0; j < Samples; j++) {
+    //             MPI_File_write(clustered_gene_file, &gene_data[i*Samples+j], 1, MPI_DOUBLE, MPI_STATUS_IGNORE);
+    //         }
+    //     }
+    //     // Close the output file
+    //     MPI_File_close(&clustered_gene_file);
+
+
+    //     MPI_File output_file;
+    //     MPI_File_open(MPI_COMM_SELF, "output_gene_medoids__manhattan_clusters.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &output_file);
+    //     for (i = 0; i < K; i++) {
+    //         for (j = 0; j < Samples; j++) {
+    //             MPI_File_write(output_file, &medoids[i * Samples + j], 1, MPI_DOUBLE, MPI_STATUS_IGNORE);
+    //         }
+    //     }
+
+    //     // Close the output file
+    //     MPI_File_close(&output_file);
+
+
+
+    //    //Write the cluster assignments to the file
+    //     MPI_File cluster_idxs;
+    //     MPI_File_open(MPI_COMM_SELF, "cluster_assignment.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &cluster_idxs);
+    //     for (i = 0; i < Genes; i++) {
+    //         MPI_File_write(cluster_idxs, &cluster_idx[i], 1, MPI_INT, MPI_STATUS_IGNORE);
+    //     }
+    //     MPI_File_close(&cluster_idxs);
+
         }
-        // Close the output file
-        MPI_File_close(&clustered_gene_file);
-
-
-        MPI_File output_file;
-        MPI_File_open(MPI_COMM_SELF, "output_gene_medoids__manhattan_clusters.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &output_file);
-        for (i = 0; i < K; i++) {
-            for (j = 0; j < Samples; j++) {
-                MPI_File_write(output_file, &medoids[i * Samples + j], 1, MPI_DOUBLE, MPI_STATUS_IGNORE);
-            }
-        }
-
-        // Close the output file
-        MPI_File_close(&output_file);
 
 
 
-       //Write the cluster assignments to the file
-        MPI_File cluster_idxs;
-        MPI_File_open(MPI_COMM_SELF, "cluster_assignment.bin", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &cluster_idxs);
-        for (i = 0; i < Genes; i++) {
-            MPI_File_write(cluster_idxs, &cluster_idx[i], 1, MPI_INT, MPI_STATUS_IGNORE);
-        }
-        MPI_File_close(&cluster_idxs);
-
-
-
-       
-        }
-
-
-
-
-
-
+MPI_Barrier(MPI_COMM_WORLD);
 
         // Free allocated memory
         if (world_rank == 0) {
-            free(gene_data);
-            free(cluster_idx);
-            free(medoids);
+            // free(gene_data);
+            // free(cluster_idx);
+            // free(medoids);
+            cudaFreeMemory(cluster_idx, gene_data, medoids);
         }
 
 
+MPI_Barrier(MPI_COMM_WORLD);
+
+    #ifdef DEBUG_MODE
+    if (!world_rank) printf("rank %d: All done. \n", world_rank);
+    #endif
 
         MPI_Finalize();
-        
-
-        printf("reached here so problem after this\n");
 
         return 0;
     }
