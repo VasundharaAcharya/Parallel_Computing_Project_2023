@@ -105,6 +105,7 @@ void computeMedoids(double* gene_data, int* idx, double* medoids) {
 // set the sample size as needed here
     int sample_size = 10; 
     for (i = 0; i < K; i++) {
+	    //set to a very large number initially, so I set to 1 billion
         min_distance =1e9;
         // randomly sample a subset of points from the cluster
         int* sample = (int*)malloc(sample_size * sizeof(int));
