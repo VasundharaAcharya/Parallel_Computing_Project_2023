@@ -16,7 +16,7 @@ As per the requirement of the project, the training file is converted to bin for
 #define Genes 7129   // X Total Number of genes to be given as an input. 
 #define Samples 34     // Represents the sample genes
 //Change the value of K to obtain the results with different clusters
-#define K 6 // Number of clusters
+#define K 10 // Number of clusters
 #define REDUNDANT_SIZE 0
 //Initializations
 extern int *cluster_idx;             
@@ -165,6 +165,8 @@ extern void cudaFreeMemory(int *cluster_idx, double *gene_data, double *medoids)
 
 
 int main(int argc, char *argv[]){
+
+          printf("hi\n");
 
 
           int myrank, numranks, result;
@@ -326,14 +328,14 @@ MPI_Barrier(MPI_COMM_WORLD);
             } 
       
     }
-    //  printf("initial medoids:\n");
-    //     for (i = 0; i < K; i++) {
-    //         printf("Medoid %d: ", i + 1);
-    //         for (j = 0; j < Samples; j++) {
-    //             printf("%lf ", *(medoids + i * Samples + j));
-    //         }
-    //         printf("\n");
-    //     }
+     printf("initial medoids:\n");
+        for (i = 0; i < K; i++) {
+            printf("Medoid %d: ", i + 1);
+            for (j = 0; j < Samples; j++) {
+                printf("%lf ", *(medoids + i * Samples + j));
+            }
+            printf("\n");
+        }
 
   
   }
@@ -368,7 +370,7 @@ MPI_Barrier(MPI_COMM_WORLD);
 
 
     //MPI_Bcast(medoids, K*Samples, MPI_DOUBLE, 0, MPI_COMM_WORLD);
- 
+
       for (i=0;i<10;i++){
 
         findclosestmedoids((double *)gene_data, (double *)medoids, &cluster_idx[0],world_rank,process_job,world_size,si,ei);
