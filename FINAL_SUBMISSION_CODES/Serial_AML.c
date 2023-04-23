@@ -79,7 +79,7 @@ void findclosestmedoids(double *gene_data, double *medoids, int* idx) {
             sum = 0;
 
             for (l = 0; l < Samples; l++) {
-              //Manhattan distance
+              //Euclidean distance
               double diff = gene_data[i * Samples + l] - medoids[j * Samples + l];
               sum += diff * diff;
               
@@ -121,7 +121,7 @@ void computeMedoids(double* gene_data, int* idx, double* medoids) {
             for (k = 0; k < sample_size; k++) {
                 distance = 0.0;
                 for (l = 0; l < Samples; l++) {
-                  //manhattan distance
+                  //Euclidean distance
                     double diff = *(gene_data + sample[j] * Samples + l) - *(gene_data + sample[k] * Samples + l);
                     distance += diff * diff;
                    
