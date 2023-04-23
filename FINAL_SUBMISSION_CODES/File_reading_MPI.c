@@ -250,43 +250,8 @@ starttime=clock_now();
           }
           MPI_Offset local_size =world_rank * buffsize + buffsize -world_rank * buffsize ;
 		  
-		  
-	/*	  //NEW CODE
-		    MPI_Offset buffsize = (file_size + world_size - 1) / world_size;
-			MPI_Offset start_idx = world_rank * buffsize;
-			MPI_Offset end_idx = start_idx + buffsize;
-			if (end_idx > file_size) {
-				end_idx = file_size;
-				buffsize = end_idx - start_idx;
-			}
-			MPI_Offset local_size = buffsize / sizeof(double);
-  */
-		//NEW CODE PART 3		  
-/*	    MPI_Offset buffsize = file_size / world_size;
-		MPI_Offset remainder = file_size % world_size;
-		MPI_Offset start_idx = world_rank * buffsize;
-		MPI_Offset end_idx = start_idx + buffsize;
-		if (world_rank == world_size - 1) {
-			end_idx += remainder;
-		}
-		MPI_Offset local_size = buffsize / sizeof(double);
-		if (world_rank == world_size - 1) {
-			local_size += remainder / sizeof(double);
-		}
-*/		  
-
-/*
-
-
-			MPI_Offset buffsize = file_size / world_size;
-MPI_Offset remainder = file_size % world_size;
-MPI_Offset start_idx = world_rank * buffsize;
-MPI_Offset end_idx = (world_rank == world_size - 1) ? file_size : start_idx + buffsize;
-MPI_Offset local_size = (end_idx - start_idx) / sizeof(double);
-if (world_rank == world_size - 1) {
-    local_size += remainder / sizeof(double);
-}*/
-double* local_data = (double*)malloc(local_size * sizeof(double));
+	
+	   double* local_data = (double*)malloc(local_size * sizeof(double));
           //double* local_data = (double*)malloc(local_size * sizeof(double));
 
           // This is taken from the slide number 20 of the mpi I/O slide
