@@ -11,11 +11,11 @@ extern "C" {
     double *medoids;      
 }
 
-#define K 6
+#define K 10
 #define n 7129
 #define nf 34
 #define REDUNDANT_SIZE 0
-
+#define thread_per_block 1024
 
 #ifndef MIN
 #define MIN(x, y) ((x < y) ? x : y)
@@ -26,8 +26,8 @@ extern "C" {
 __global__ void find_min(double *m_arr, int *mind, double *mval)
 {
     // shared data for each block
-    __shared__ double sdata[1024 + 10];
-    __shared__ int sind[1024 + 10];
+    __shared__ double sdata[thread_per_block];
+    __shared__ int sind[thread_per_block];
     int tid = threadIdx.x;
     size_t idx = threadIdx.x + blockDim.x * blockIdx.x;
     // putting data into shared memory
@@ -191,7 +191,7 @@ void cudaFreeMemory(int *cluster_idx, double *gene_data, double *medoids)
 
 void computeMedoids(double* data, int* labels, double* medoids, int rank, int size) 
 {
-    int blockSize = 1024;
+    int blockSize = thread_per_block;
     int nblocks = (n+blockSize-1)/blockSize;
 
     // Divide the K clusters across the processes
@@ -303,7 +303,7 @@ void computeMedoids(double* data, int* labels, double* medoids, int rank, int si
 
 void findclosestmedoids(double *data, double *medoids, int *idx , int rank, int process_job,int size, int si,int ei)
 {
-    int blockSize = 1024;
+    int blockSize = thread_per_block;
     // printf("%d %d\n",si,ei);
     int size1 = (ei-si) + 1;
     int nblocks = (process_job+blockSize-1)/blockSize;
