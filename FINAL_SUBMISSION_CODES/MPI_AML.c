@@ -117,7 +117,7 @@ void computeMedoids(double* gene_data, int* idx, double* medoids, int rank, int 
     // using entire gene data instead of sampling
     int sample_size = Genes; 
    
-    // Divide the K clusters across the processes
+    // Divide the K clusters across the processes. This was done after talking to professor as it was ideal to split the clusters among processes. Also computation of remainder is must
     int medoids_per_proc = K / size;
     int remainder = K % size;
     int start_idx = rank * medoids_per_proc;
